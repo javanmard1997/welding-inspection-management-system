@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Weld Joints - WIMS</title>
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            WIMS
+        </div>
+
+        <nav>
+            <a href="../index.html">Dashboard</a>
+            <a href="projects.html">Projects</a>
+            <a href="welds.html" class="active">Weld Joints</a>
+            <a href="inspections.html">Inspections</a>
+        </nav>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div>
+                <h1>Weld Joints</h1>
+                <p>Manage welding joints and traceability</p>
+            </div>
+
+        </header>
+
+
+        <section class="panel">
+
+            <div class="panel-header">
+                <h2>Add Weld Joint</h2>
+            </div>
+
+
+            <form id="weldForm">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="weldProject">Project</label>
+
+                        <select id="weldProject" required>
+                            <option value="">Select Project</option>
+                        </select>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="jointNumber">Joint Number</label>
+
+                        <input
+                            type="text"
+                            id="jointNumber"
+                            placeholder="Example: J-001"
+                            required
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="welderId">Welder ID</label>
+
+                        <input
+                            type="text"
+                            id="welderId"
+                            placeholder="Example: W-102"
+                            required
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="wpsNumber">WPS Number</label>
+
+                        <input
+                            type="text"
+                            id="wpsNumber"
+                            placeholder="Example: WPS-001"
+                            required
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="material">Material</label>
+
+                        <input
+                            type="text"
+                            id="material"
+                            placeholder="Example: ASTM A106"
+                            required
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="thickness">Thickness (mm)</label>
+
+                        <input
+                            type="number"
+                            id="thickness"
+                            placeholder="Example: 12"
+                            min="0"
+                            step="0.1"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    Add Weld Joint
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <section class="panel project-list">
+
+            <div class="panel-header">
+                <h2>Weld Joint List</h2>
+            </div>
+
+
+            <div class="weld-filters">
+
+                <input
+                    type="text"
+                    id="weldSearch"
+                    placeholder="Search Joint, Welder or WPS..."
+                >
+
+
+                <select id="weldProjectFilter">
+                    <option value="">All Projects</option>
+                </select>
+
+
+                <select id="weldStatusFilter">
+
+                    <option value="">All Status</option>
+
+                    <option value="Pending">
+                        Pending
+                    </option>
+
+                    <option value="Accepted">
+                        Accepted
+                    </option>
+
+                    <option value="Rejected">
+                        Rejected
+                    </option>
+
+                </select>
+
+
+                <button
+                    type="button"
+                    id="clearWeldFilters"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+
+            <p id="weldResultCount">
+                Showing 0 of 0 welds
+            </p>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Project</th>
+                            <th>Joint No.</th>
+                            <th>Welder</th>
+                            <th>WPS</th>
+                            <th>Material</th>
+                            <th>Thickness</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="weldTable">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="../script.js"></script>
+
+</body>
+
+</html>

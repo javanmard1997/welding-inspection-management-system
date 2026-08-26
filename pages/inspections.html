@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inspections - WIMS</title>
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            WIMS
+        </div>
+
+        <nav>
+
+            <a href="../index.html">
+                Dashboard
+            </a>
+
+            <a href="projects.html">
+                Projects
+            </a>
+
+            <a href="welds.html">
+                Weld Joints
+            </a>
+
+            <a href="inspections.html" class="active">
+                Inspections
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- Main Content -->
+
+    <main class="main-content">
+
+        <!-- Header -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h1>
+                    Inspections
+                </h1>
+
+                <p>
+                    Manage welding inspection records
+                </p>
+
+            </div>
+
+        </header>
+
+
+        <!-- Add Inspection -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Add Inspection
+                </h2>
+
+            </div>
+
+
+            <form id="inspectionForm">
+
+                <div class="form-grid">
+
+
+                    <!-- Project -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Project
+                        </label>
+
+                        <select
+                            id="inspectionProject"
+                            required
+                        >
+
+                            <option value="">
+                                Select Project
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Weld Joint -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Weld Joint
+                        </label>
+
+                        <select
+                            id="inspectionJoint"
+                            required
+                        >
+
+                            <option value="">
+                                Select Joint
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Inspection Method -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Inspection Method
+                        </label>
+
+                        <select
+                            id="inspectionMethod"
+                            required
+                        >
+
+                            <option value="">
+                                Select Method
+                            </option>
+
+                            <option value="VT">
+                                VT - Visual Testing
+                            </option>
+
+                            <option value="PT">
+                                PT - Penetrant Testing
+                            </option>
+
+                            <option value="MT">
+                                MT - Magnetic Testing
+                            </option>
+
+                            <option value="UT">
+                                UT - Ultrasonic Testing
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Inspector -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Inspector
+                        </label>
+
+                        <input
+                            type="text"
+                            id="inspectorName"
+                            placeholder="Inspector name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Inspection Date -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Inspection Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="inspectionDate"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Result -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Result
+                        </label>
+
+                        <select
+                            id="inspectionResult"
+                            required
+                        >
+
+                            <option value="">
+                                Select Result
+                            </option>
+
+                            <option value="Accepted">
+                                Accepted
+                            </option>
+
+                            <option value="Rejected">
+                                Rejected
+                            </option>
+
+                            <option value="Pending">
+                                Pending
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Comments -->
+
+                    <div class="form-group full-width">
+
+                        <label>
+                            Comments
+                        </label>
+
+                        <textarea
+                            id="inspectionComments"
+                            placeholder="Inspection comments..."
+                            rows="4"
+                        ></textarea>
+
+                    </div>
+
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    Add Inspection
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- Inspection List -->
+
+        <section class="panel project-list">
+
+            <div class="panel-header">
+
+                <h2>
+                    Inspection Records
+                </h2>
+
+            </div>
+
+
+            <!-- Filters -->
+
+            <div class="inspection-filters">
+
+
+                <input
+                    type="text"
+                    id="inspectionSearch"
+                    placeholder="Search Joint or Inspector..."
+                >
+
+
+                <select id="inspectionProjectFilter">
+
+                    <option value="">
+                        All Projects
+                    </option>
+
+                </select>
+
+
+                <select id="inspectionMethodFilter">
+
+                    <option value="">
+                        All Methods
+                    </option>
+
+                    <option value="VT">
+                        VT
+                    </option>
+
+                    <option value="PT">
+                        PT
+                    </option>
+
+                    <option value="MT">
+                        MT
+                    </option>
+
+                    <option value="UT">
+                        UT
+                    </option>
+
+                </select>
+
+
+                <select id="inspectionResultFilter">
+
+                    <option value="">
+                        All Results
+                    </option>
+
+                    <option value="Accepted">
+                        Accepted
+                    </option>
+
+                    <option value="Rejected">
+                        Rejected
+                    </option>
+
+                    <option value="Pending">
+                        Pending
+                    </option>
+
+                </select>
+
+
+                <button
+                    type="button"
+                    id="clearInspectionFilters"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+
+            <!-- Result Count -->
+
+            <p id="inspectionResultCount">
+                Showing 0 of 0 inspections
+            </p>
+
+
+            <!-- Table -->
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Project
+                            </th>
+
+                            <th>
+                                Joint No.
+                            </th>
+
+                            <th>
+                                Method
+                            </th>
+
+                            <th>
+                                Inspector
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Result
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="inspectionRecords">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="../script.js"></script>
+
+</body>
+
+</html>

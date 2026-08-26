@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Projects - WIMS</title>
+
+    <link
+        rel="stylesheet"
+        href="../style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- Sidebar -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            WIMS
+        </div>
+
+        <nav>
+
+            <a href="../index.html">
+                Dashboard
+            </a>
+
+            <a
+                href="projects.html"
+                class="active"
+            >
+                Projects
+            </a>
+
+            <a href="welds.html">
+                Weld Joints
+            </a>
+
+            <a href="inspections.html">
+                Inspections
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+
+    <!-- Main Content -->
+
+    <main class="main-content">
+
+
+        <!-- Header -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h1>
+                    Projects
+                </h1>
+
+                <p>
+                    Manage welding inspection projects
+                </p>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- Add Project -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Add New Project
+                </h2>
+
+            </div>
+
+
+            <form id="projectForm">
+
+                <div class="form-grid">
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Project Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="projectName"
+                            placeholder="Enter project name"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Client
+                        </label>
+
+                        <input
+                            type="text"
+                            id="clientName"
+                            placeholder="Enter client name"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Location
+                        </label>
+
+                        <input
+                            type="text"
+                            id="projectLocation"
+                            placeholder="Project location"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Start Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="startDate"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                    id="projectSubmitButton"
+                >
+                    Add Project
+                </button>
+
+
+            </form>
+
+        </section>
+
+
+
+        <!-- Project List -->
+
+        <section class="panel project-list">
+
+
+            <div class="panel-header">
+
+                <h2>
+                    Project List
+                </h2>
+
+                <span id="projectResultCount">
+                    0 Projects
+                </span>
+
+            </div>
+
+
+
+            <!-- Search -->
+
+            <div class="weld-filters">
+
+                <input
+                    type="text"
+                    id="projectSearch"
+                    placeholder="Search project, client or location..."
+                >
+
+                <select id="projectStatusFilter">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option value="Active">
+                        Active
+                    </option>
+
+                    <option value="Completed">
+                        Completed
+                    </option>
+
+                    <option value="On Hold">
+                        On Hold
+                    </option>
+
+                </select>
+
+
+                <button
+                    type="button"
+                    id="clearProjectFilters"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+
+
+            <!-- Table -->
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Project
+                            </th>
+
+                            <th>
+                                Client
+                            </th>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+                                Start Date
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="projectTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <script src="../script.js"></script>
+
+</body>
+
+</html>

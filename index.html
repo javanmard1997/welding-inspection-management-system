@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Welding Inspection Management System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            WIMS
+        </div>
+
+        <nav>
+            <a href="index.html" class="active">Dashboard</a>
+            <a href="pages/projects.html">Projects</a>
+            <a href="pages/welds.html">Weld Joints</a>
+            <a href="pages/inspections.html">Inspections</a>
+        </nav>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div>
+                <h1>Dashboard</h1>
+                <p>Welding Inspection Management System</p>
+            </div>
+
+            <div class="inspector">
+                Inspector
+            </div>
+
+        </header>
+
+
+        <section class="stats">
+
+            <div class="stat-card">
+                <span>Total Projects</span>
+                <strong id="projectCount">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span>Total Welds</span>
+                <strong id="weldCount">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span>Accepted</span>
+                <strong id="acceptedCount">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span>Rejected</span>
+                <strong id="rejectedCount">0</strong>
+            </div>
+
+        </section>
+
+
+        <section class="dashboard-grid">
+
+            <div class="panel">
+
+                <div class="panel-header">
+                    <h2>Recent Inspections</h2>
+
+                    <a href="pages/inspections.html">
+                        View All
+                    </a>
+                </div>
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Joint No.</th>
+                            <th>Welder</th>
+                            <th>Method</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="inspectionTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h2>Inspection Summary</h2>
+
+                <div class="summary">
+
+                    <div>
+                        <span>VT</span>
+                        <strong id="vtCount">0</strong>
+                    </div>
+
+                    <div>
+                        <span>PT</span>
+                        <strong id="ptCount">0</strong>
+                    </div>
+
+                    <div>
+                        <span>MT</span>
+                        <strong id="mtCount">0</strong>
+                    </div>
+
+                    <div>
+                        <span>UT</span>
+                        <strong id="utCount">0</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

@@ -18,6 +18,20 @@ let inspections =
     JSON.parse(localStorage.getItem("inspections")) || [];
 
 
+const INSPECTION_METHODS = [
+    "VT",
+    "PT",
+    "MT",
+    "UT"
+];
+
+const INSPECTION_RESULTS = [
+    "Accepted",
+    "Rejected",
+    "Pending"
+];
+
+
 // =====================================================
 // HELPER
 // =====================================================
@@ -38,6 +52,149 @@ function saveAllData() {
         "inspections",
         JSON.stringify(inspections)
     );
+}
+
+
+let lastGeneratedId = 0;
+
+
+function createId() {
+
+    const now = Date.now();
+
+    lastGeneratedId =
+        now > lastGeneratedId
+        ?
+        now
+        :
+        lastGeneratedId + 1;
+
+    return lastGeneratedId;
+}
+
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+
+function normalizeOption(value, allowed) {
+
+    return allowed.find(
+        option =>
+            option.toLowerCase() ===
+            String(value).trim().toLowerCase()
+    );
+}
+
+
+function fillSelectOptions(select, placeholder, options) {
+
+    if (!select) {
+        return;
+    }
+
+
+    const previousValue = select.value;
+
+
+    select.innerHTML = "";
+
+
+    const placeholderOption =
+        document.createElement("option");
+
+    placeholderOption.value = "";
+
+    placeholderOption.textContent = placeholder;
+
+    select.appendChild(placeholderOption);
+
+
+    options.forEach(item => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = item.value;
+
+        option.textContent = item.label;
+
+        select.appendChild(option);
+
+    });
+
+
+    select.value = previousValue;
+
+
+    if (select.selectedIndex === -1) {
+        select.selectedIndex = 0;
+    }
+
+}
+
+
+// =====================================================
+// WELD STATUS
+// =====================================================
+
+function syncWeldStatus(weldId) {
+
+    const weld =
+        welds.find(
+            weld => weld.id === weldId
+        );
+
+
+    if (!weld) {
+        return;
+    }
+
+
+    const weldInspections =
+        inspections.filter(
+            inspection =>
+                inspection.jointId === weldId
+        );
+
+
+    if (!weldInspections.length) {
+
+        weld.status = "Pending";
+
+        return;
+    }
+
+
+    const latest =
+        weldInspections.reduce(
+            (latest, inspection) =>
+                inspection.id > latest.id
+                ?
+                inspection
+                :
+                latest
+        );
+
+
+    weld.status = latest.result;
+
+}
+
+
+function syncAllWeldStatuses() {
+
+    welds.forEach(
+        weld => syncWeldStatus(weld.id)
+    );
+
 }
 
 
@@ -164,19 +321,19 @@ function updateDashboard() {
         row.innerHTML = `
 
             <td>
-                ${inspection.jointNumber}
+                ${escapeHtml(inspection.jointNumber)}
             </td>
 
             <td>
-                ${inspection.inspector}
+                ${escapeHtml(inspection.inspector)}
             </td>
 
             <td>
-                ${inspection.method}
+                ${escapeHtml(inspection.method)}
             </td>
 
             <td>
-                ${inspection.result}
+                ${escapeHtml(inspection.result)}
             </td>
 
         `;
@@ -199,6 +356,71 @@ const projectForm =
 const projectTable =
     document.getElementById("projectTable");
 
+const projectSearch =
+    document.getElementById("projectSearch");
+
+const projectStatusFilter =
+    document.getElementById("projectStatusFilter");
+
+const clearProjectFilters =
+    document.getElementById("clearProjectFilters");
+
+const projectResultCount =
+    document.getElementById("projectResultCount");
+
+
+function getFilteredProjects() {
+
+    const search =
+        projectSearch
+        ?
+        projectSearch.value
+            .trim()
+            .toLowerCase()
+        :
+        "";
+
+
+    const status =
+        projectStatusFilter
+        ?
+        projectStatusFilter.value
+        :
+        "";
+
+
+    return projects.filter(project => {
+
+        const matchesSearch =
+
+            !search ||
+
+            project.name
+                .toLowerCase()
+                .includes(search) ||
+
+            project.client
+                .toLowerCase()
+                .includes(search) ||
+
+            project.location
+                .toLowerCase()
+                .includes(search);
+
+
+        const matchesStatus =
+
+            !status ||
+
+            project.status === status;
+
+
+        return matchesSearch && matchesStatus;
+
+    });
+
+}
+
 
 function renderProjects() {
 
@@ -207,10 +429,14 @@ function renderProjects() {
     }
 
 
+    const filteredProjects =
+        getFilteredProjects();
+
+
     projectTable.innerHTML = "";
 
 
-    projects.forEach(project => {
+    filteredProjects.forEach(project => {
 
         const row =
             document.createElement("tr");
@@ -219,23 +445,23 @@ function renderProjects() {
         row.innerHTML = `
 
             <td>
-                ${project.name}
+                ${escapeHtml(project.name)}
             </td>
 
             <td>
-                ${project.client}
+                ${escapeHtml(project.client)}
             </td>
 
             <td>
-                ${project.location}
+                ${escapeHtml(project.location)}
             </td>
 
             <td>
-                ${project.startDate}
+                ${escapeHtml(project.startDate)}
             </td>
 
             <td>
-                ${project.status}
+                ${escapeHtml(project.status)}
             </td>
 
             <td class="action-buttons">
@@ -264,6 +490,56 @@ function renderProjects() {
         projectTable.appendChild(row);
 
     });
+
+
+    if (projectResultCount) {
+
+        projectResultCount.textContent =
+            `Showing ${filteredProjects.length} of ${projects.length} projects`;
+
+    }
+
+}
+
+
+if (projectSearch) {
+
+    projectSearch.addEventListener(
+        "input",
+        renderProjects
+    );
+
+}
+
+
+if (projectStatusFilter) {
+
+    projectStatusFilter.addEventListener(
+        "change",
+        renderProjects
+    );
+
+}
+
+
+if (clearProjectFilters) {
+
+    clearProjectFilters.addEventListener(
+        "click",
+        function () {
+
+            if (projectSearch) {
+                projectSearch.value = "";
+            }
+
+            if (projectStatusFilter) {
+                projectStatusFilter.value = "";
+            }
+
+            renderProjects();
+
+        }
+    );
 
 }
 
@@ -321,7 +597,7 @@ if (projectForm) {
 
             const newProject = {
 
-                id: Date.now(),
+                id: createId(),
 
                 name: name,
 
@@ -347,6 +623,14 @@ if (projectForm) {
 
             projectForm.reset();
 
+
+            loadProjectOptions();
+
+            loadInspectionProjects();
+
+            loadWeldProjectFilter();
+
+            loadInspectionProjectFilter();
 
             updateDashboard();
 
@@ -421,6 +705,21 @@ function editProject(id) {
     }
 
 
+    if (
+        !newName.trim() ||
+        !newClient.trim() ||
+        !newLocation.trim() ||
+        !newDate.trim()
+    ) {
+
+        alert(
+            "Please complete all project fields."
+        );
+
+        return;
+    }
+
+
     project.name =
         newName.trim();
 
@@ -483,6 +782,8 @@ function editProject(id) {
     loadInspectionProjects();
 
     loadWeldProjectFilter();
+
+    loadInspectionProjectFilter();
 
     updateDashboard();
 
@@ -575,6 +876,8 @@ function deleteProject(id) {
 
     loadWeldProjectFilter();
 
+    loadInspectionProjectFilter();
+
     updateDashboard();
 
 }
@@ -596,35 +899,134 @@ const weldProject =
 
 function loadProjectOptions() {
 
-    if (!weldProject) {
-        return;
-    }
+    fillSelectOptions(
+        weldProject,
+        "Select Project",
+        projects.map(project => ({
+            value: project.id,
+            label: project.name
+        }))
+    );
+
+}
 
 
-    weldProject.innerHTML = `
+// =====================================================
+// WELD SEARCH & FILTER
+// =====================================================
 
-        <option value="">
-            Select Project
-        </option>
+const weldSearch =
+    document.getElementById("weldSearch");
 
-    `;
+const weldProjectFilter =
+    document.getElementById(
+        "weldProjectFilter"
+    );
+
+const weldStatusFilter =
+    document.getElementById(
+        "weldStatusFilter"
+    );
+
+const clearWeldFilters =
+    document.getElementById(
+        "clearWeldFilters"
+    );
+
+const weldResultCount =
+    document.getElementById(
+        "weldResultCount"
+    );
 
 
-    projects.forEach(project => {
+function loadWeldProjectFilter() {
 
-        const option =
-            document.createElement("option");
+    fillSelectOptions(
+        weldProjectFilter,
+        "All Projects",
+        projects.map(project => ({
+            value: project.id,
+            label: project.name
+        }))
+    );
+
+}
 
 
-        option.value =
-            project.id;
+function getFilteredWelds() {
+
+    const search =
+        weldSearch
+        ?
+        weldSearch.value
+            .trim()
+            .toLowerCase()
+        :
+        "";
 
 
-        option.textContent =
-            project.name;
+    const project =
+        weldProjectFilter
+        ?
+        weldProjectFilter.value
+        :
+        "";
 
 
-        weldProject.appendChild(option);
+    const status =
+        weldStatusFilter
+        ?
+        weldStatusFilter.value
+        :
+        "";
+
+
+    return welds.filter(weld => {
+
+        const matchesSearch =
+
+            !search ||
+
+            weld.jointNumber
+                .toLowerCase()
+                .includes(search) ||
+
+            weld.welderId
+                .toLowerCase()
+                .includes(search) ||
+
+            weld.wpsNumber
+                .toLowerCase()
+                .includes(search) ||
+
+            weld.material
+                .toLowerCase()
+                .includes(search);
+
+
+        const matchesProject =
+
+            !project ||
+
+            weld.projectId == project;
+
+
+        const matchesStatus =
+
+            !status ||
+
+            weld.status === status;
+
+
+        return (
+
+            matchesSearch &&
+
+            matchesProject &&
+
+            matchesStatus
+
+        );
 
     });
 
@@ -642,10 +1044,14 @@ function renderWelds() {
     }
 
 
+    const filteredWelds =
+        getFilteredWelds();
+
+
     weldTable.innerHTML = "";
 
 
-    welds.forEach(weld => {
+    filteredWelds.forEach(weld => {
 
         const row =
             document.createElement("tr");
@@ -654,31 +1060,31 @@ function renderWelds() {
         row.innerHTML = `
 
             <td>
-                ${weld.projectName}
+                ${escapeHtml(weld.projectName)}
             </td>
 
             <td>
-                ${weld.jointNumber}
+                ${escapeHtml(weld.jointNumber)}
             </td>
 
             <td>
-                ${weld.welderId}
+                ${escapeHtml(weld.welderId)}
             </td>
 
             <td>
-                ${weld.wpsNumber}
+                ${escapeHtml(weld.wpsNumber)}
             </td>
 
             <td>
-                ${weld.material}
+                ${escapeHtml(weld.material)}
             </td>
 
             <td>
-                ${weld.thickness} mm
+                ${escapeHtml(weld.thickness)} mm
             </td>
 
             <td>
-                ${weld.status}
+                ${escapeHtml(weld.status)}
             </td>
 
             <td class="action-buttons">
@@ -707,6 +1113,70 @@ function renderWelds() {
         weldTable.appendChild(row);
 
     });
+
+
+    if (weldResultCount) {
+
+        weldResultCount.textContent =
+            `Showing ${filteredWelds.length} of ${welds.length} welds`;
+
+    }
+
+}
+
+
+if (weldSearch) {
+
+    weldSearch.addEventListener(
+        "input",
+        renderWelds
+    );
+
+}
+
+
+if (weldProjectFilter) {
+
+    weldProjectFilter.addEventListener(
+        "change",
+        renderWelds
+    );
+
+}
+
+
+if (weldStatusFilter) {
+
+    weldStatusFilter.addEventListener(
+        "change",
+        renderWelds
+    );
+
+}
+
+
+if (clearWeldFilters) {
+
+    clearWeldFilters.addEventListener(
+        "click",
+        function () {
+
+            if (weldSearch) {
+                weldSearch.value = "";
+            }
+
+            if (weldProjectFilter) {
+                weldProjectFilter.value = "";
+            }
+
+            if (weldStatusFilter) {
+                weldStatusFilter.value = "";
+            }
+
+            renderWelds();
+
+        }
+    );
 
 }
 
@@ -749,9 +1219,60 @@ if (weldForm) {
             }
 
 
+            const jointNumber =
+                document
+                .getElementById("jointNumber")
+                .value
+                .trim();
+
+
+            const welderId =
+                document
+                .getElementById("welderId")
+                .value
+                .trim();
+
+
+            const wpsNumber =
+                document
+                .getElementById("wpsNumber")
+                .value
+                .trim();
+
+
+            const material =
+                document
+                .getElementById("material")
+                .value
+                .trim();
+
+
+            const thickness =
+                document
+                .getElementById("thickness")
+                .value
+                .trim();
+
+
+            if (
+                !jointNumber ||
+                !welderId ||
+                !wpsNumber ||
+                !material ||
+                !thickness
+            ) {
+
+                alert(
+                    "Please complete all weld joint fields."
+                );
+
+                return;
+            }
+
+
             const newWeld = {
 
-                id: Date.now(),
+                id: createId(),
 
                 projectId:
                     selectedProject.id,
@@ -759,34 +1280,15 @@ if (weldForm) {
                 projectName:
                     selectedProject.name,
 
-                jointNumber:
-                    document
-                    .getElementById("jointNumber")
-                    .value
-                    .trim(),
+                jointNumber: jointNumber,
 
-                welderId:
-                    document
-                    .getElementById("welderId")
-                    .value
-                    .trim(),
+                welderId: welderId,
 
-                wpsNumber:
-                    document
-                    .getElementById("wpsNumber")
-                    .value
-                    .trim(),
+                wpsNumber: wpsNumber,
 
-                material:
-                    document
-                    .getElementById("material")
-                    .value
-                    .trim(),
+                material: material,
 
-                thickness:
-                    document
-                    .getElementById("thickness")
-                    .value,
+                thickness: thickness,
 
                 status:
                     "Pending"
@@ -891,6 +1393,22 @@ function editWeld(id) {
     }
 
 
+    if (
+        !newJoint.trim() ||
+        !newWelder.trim() ||
+        !newWps.trim() ||
+        !newMaterial.trim() ||
+        !newThickness.trim()
+    ) {
+
+        alert(
+            "Please complete all weld joint fields."
+        );
+
+        return;
+    }
+
+
     weld.jointNumber =
         newJoint.trim();
 
@@ -933,6 +1451,8 @@ function editWeld(id) {
     renderWelds();
 
     renderInspections();
+
+    loadInspectionJoints();
 
     updateDashboard();
 
@@ -1001,291 +1521,9 @@ function deleteWeld(id) {
 
     renderInspections();
 
+    loadInspectionJoints();
+
     updateDashboard();
-
-}
-
-
-// =====================================================
-// WELD SEARCH & FILTER
-// =====================================================
-
-const weldSearch =
-    document.getElementById("weldSearch");
-
-const weldProjectFilter =
-    document.getElementById(
-        "weldProjectFilter"
-    );
-
-const weldStatusFilter =
-    document.getElementById(
-        "weldStatusFilter"
-    );
-
-const clearWeldFilters =
-    document.getElementById(
-        "clearWeldFilters"
-    );
-
-const weldResultCount =
-    document.getElementById(
-        "weldResultCount"
-    );
-
-
-function loadWeldProjectFilter() {
-
-    if (!weldProjectFilter) {
-        return;
-    }
-
-
-    weldProjectFilter.innerHTML = `
-
-        <option value="">
-            All Projects
-        </option>
-
-    `;
-
-
-    projects.forEach(project => {
-
-        const option =
-            document.createElement("option");
-
-
-        option.value =
-            project.id;
-
-
-        option.textContent =
-            project.name;
-
-
-        weldProjectFilter.appendChild(
-            option
-        );
-
-    });
-
-}
-
-
-function filterWelds() {
-
-    if (!weldTable) {
-        return;
-    }
-
-
-    const search =
-        weldSearch
-        ?
-        weldSearch.value
-            .trim()
-            .toLowerCase()
-        :
-        "";
-
-
-    const project =
-        weldProjectFilter
-        ?
-        weldProjectFilter.value
-        :
-        "";
-
-
-    const status =
-        weldStatusFilter
-        ?
-        weldStatusFilter.value
-        :
-        "";
-
-
-    const filteredWelds =
-        welds.filter(weld => {
-
-            const matchesSearch =
-
-                !search ||
-
-                weld.jointNumber
-                    .toLowerCase()
-                    .includes(search) ||
-
-                weld.welderId
-                    .toLowerCase()
-                    .includes(search) ||
-
-                weld.wpsNumber
-                    .toLowerCase()
-                    .includes(search) ||
-
-                weld.material
-                    .toLowerCase()
-                    .includes(search);
-
-
-            const matchesProject =
-
-                !project ||
-
-                weld.projectId == project;
-
-
-            const matchesStatus =
-
-                !status ||
-
-                weld.status === status;
-
-
-            return (
-
-                matchesSearch &&
-
-                matchesProject &&
-
-                matchesStatus
-
-            );
-
-        });
-
-
-    weldTable.innerHTML = "";
-
-
-    filteredWelds.forEach(weld => {
-
-        const row =
-            document.createElement("tr");
-
-
-        row.innerHTML = `
-
-            <td>
-                ${weld.projectName}
-            </td>
-
-            <td>
-                ${weld.jointNumber}
-            </td>
-
-            <td>
-                ${weld.welderId}
-            </td>
-
-            <td>
-                ${weld.wpsNumber}
-            </td>
-
-            <td>
-                ${weld.material}
-            </td>
-
-            <td>
-                ${weld.thickness} mm
-            </td>
-
-            <td>
-                ${weld.status}
-            </td>
-
-            <td class="action-buttons">
-
-                <button
-                    type="button"
-                    class="edit-button"
-                    onclick="editWeld(${weld.id})"
-                >
-                    Edit
-                </button>
-
-                <button
-                    type="button"
-                    class="delete-button"
-                    onclick="deleteWeld(${weld.id})"
-                >
-                    Delete
-                </button>
-
-            </td>
-
-        `;
-
-
-        weldTable.appendChild(row);
-
-    });
-
-
-    if (weldResultCount) {
-
-        weldResultCount.textContent =
-            `Showing ${filteredWelds.length} of ${welds.length} welds`;
-
-    }
-
-}
-
-
-if (weldSearch) {
-
-    weldSearch.addEventListener(
-        "input",
-        filterWelds
-    );
-
-}
-
-
-if (weldProjectFilter) {
-
-    weldProjectFilter.addEventListener(
-        "change",
-        filterWelds
-    );
-
-}
-
-
-if (weldStatusFilter) {
-
-    weldStatusFilter.addEventListener(
-        "change",
-        filterWelds
-    );
-
-}
-
-
-if (clearWeldFilters) {
-
-    clearWeldFilters.addEventListener(
-        "click",
-        function () {
-
-            if (weldSearch) {
-                weldSearch.value = "";
-            }
-
-            if (weldProjectFilter) {
-                weldProjectFilter.value = "";
-            }
-
-            if (weldStatusFilter) {
-                weldStatusFilter.value = "";
-            }
-
-            filterWelds();
-
-        }
-    );
 
 }
 
@@ -1314,6 +1552,36 @@ const inspectionRecords =
         "inspectionRecords"
     );
 
+const inspectionSearch =
+    document.getElementById(
+        "inspectionSearch"
+    );
+
+const inspectionProjectFilter =
+    document.getElementById(
+        "inspectionProjectFilter"
+    );
+
+const inspectionMethodFilter =
+    document.getElementById(
+        "inspectionMethodFilter"
+    );
+
+const inspectionResultFilter =
+    document.getElementById(
+        "inspectionResultFilter"
+    );
+
+const clearInspectionFilters =
+    document.getElementById(
+        "clearInspectionFilters"
+    );
+
+const inspectionResultCount =
+    document.getElementById(
+        "inspectionResultCount"
+    );
+
 
 // =====================================================
 // LOAD INSPECTION PROJECTS
@@ -1321,39 +1589,28 @@ const inspectionRecords =
 
 function loadInspectionProjects() {
 
-    if (!inspectionProject) {
-        return;
-    }
+    fillSelectOptions(
+        inspectionProject,
+        "Select Project",
+        projects.map(project => ({
+            value: project.id,
+            label: project.name
+        }))
+    );
+
+}
 
 
-    inspectionProject.innerHTML = `
+function loadInspectionProjectFilter() {
 
-        <option value="">
-            Select Project
-        </option>
-
-    `;
-
-
-    projects.forEach(project => {
-
-        const option =
-            document.createElement("option");
-
-
-        option.value =
-            project.id;
-
-
-        option.textContent =
-            project.name;
-
-
-        inspectionProject.appendChild(
-            option
-        );
-
-    });
+    fillSelectOptions(
+        inspectionProjectFilter,
+        "All Projects",
+        projects.map(project => ({
+            value: project.id,
+            label: project.name
+        }))
+    );
 
 }
 
@@ -1376,46 +1633,25 @@ function loadInspectionJoints() {
         inspectionProject.value;
 
 
-    inspectionJoint.innerHTML = `
-
-        <option value="">
-            Select Joint
-        </option>
-
-    `;
-
-
-    if (!projectId) {
-        return;
-    }
-
-
     const projectWelds =
+        projectId
+        ?
         welds.filter(
             weld =>
                 weld.projectId == projectId
-        );
+        )
+        :
+        [];
 
 
-    projectWelds.forEach(weld => {
-
-        const option =
-            document.createElement("option");
-
-
-        option.value =
-            weld.id;
-
-
-        option.textContent =
-            weld.jointNumber;
-
-
-        inspectionJoint.appendChild(
-            option
-        );
-
-    });
+    fillSelectOptions(
+        inspectionJoint,
+        "Select Joint",
+        projectWelds.map(weld => ({
+            value: weld.id,
+            label: weld.jointNumber
+        }))
+    );
 
 }
 
@@ -1424,6 +1660,95 @@ function loadInspectionJoints() {
 // RENDER INSPECTIONS
 // =====================================================
 
+function getFilteredInspections() {
+
+    const search =
+        inspectionSearch
+        ?
+        inspectionSearch.value
+            .trim()
+            .toLowerCase()
+        :
+        "";
+
+
+    const project =
+        inspectionProjectFilter
+        ?
+        inspectionProjectFilter.value
+        :
+        "";
+
+
+    const method =
+        inspectionMethodFilter
+        ?
+        inspectionMethodFilter.value
+        :
+        "";
+
+
+    const result =
+        inspectionResultFilter
+        ?
+        inspectionResultFilter.value
+        :
+        "";
+
+
+    return inspections.filter(inspection => {
+
+        const matchesSearch =
+
+            !search ||
+
+            inspection.jointNumber
+                .toLowerCase()
+                .includes(search) ||
+
+            inspection.inspector
+                .toLowerCase()
+                .includes(search);
+
+
+        const matchesProject =
+
+            !project ||
+
+            inspection.projectId == project;
+
+
+        const matchesMethod =
+
+            !method ||
+
+            inspection.method === method;
+
+
+        const matchesResult =
+
+            !result ||
+
+            inspection.result === result;
+
+
+        return (
+
+            matchesSearch &&
+
+            matchesProject &&
+
+            matchesMethod &&
+
+            matchesResult
+
+        );
+
+    });
+
+}
+
+
 function renderInspections() {
 
     if (!inspectionRecords) {
@@ -1431,10 +1756,14 @@ function renderInspections() {
     }
 
 
+    const filteredInspections =
+        getFilteredInspections();
+
+
     inspectionRecords.innerHTML = "";
 
 
-    inspections.forEach(inspection => {
+    filteredInspections.forEach(inspection => {
 
         const row =
             document.createElement("tr");
@@ -1443,27 +1772,27 @@ function renderInspections() {
         row.innerHTML = `
 
             <td>
-                ${inspection.projectName}
+                ${escapeHtml(inspection.projectName)}
             </td>
 
             <td>
-                ${inspection.jointNumber}
+                ${escapeHtml(inspection.jointNumber)}
             </td>
 
             <td>
-                ${inspection.method}
+                ${escapeHtml(inspection.method)}
             </td>
 
             <td>
-                ${inspection.inspector}
+                ${escapeHtml(inspection.inspector)}
             </td>
 
             <td>
-                ${inspection.date}
+                ${escapeHtml(inspection.date)}
             </td>
 
             <td>
-                ${inspection.result}
+                ${escapeHtml(inspection.result)}
             </td>
 
             <td class="action-buttons">
@@ -1494,6 +1823,84 @@ function renderInspections() {
         );
 
     });
+
+
+    if (inspectionResultCount) {
+
+        inspectionResultCount.textContent =
+            `Showing ${filteredInspections.length} of ${inspections.length} inspections`;
+
+    }
+
+}
+
+
+if (inspectionSearch) {
+
+    inspectionSearch.addEventListener(
+        "input",
+        renderInspections
+    );
+
+}
+
+
+if (inspectionProjectFilter) {
+
+    inspectionProjectFilter.addEventListener(
+        "change",
+        renderInspections
+    );
+
+}
+
+
+if (inspectionMethodFilter) {
+
+    inspectionMethodFilter.addEventListener(
+        "change",
+        renderInspections
+    );
+
+}
+
+
+if (inspectionResultFilter) {
+
+    inspectionResultFilter.addEventListener(
+        "change",
+        renderInspections
+    );
+
+}
+
+
+if (clearInspectionFilters) {
+
+    clearInspectionFilters.addEventListener(
+        "click",
+        function () {
+
+            if (inspectionSearch) {
+                inspectionSearch.value = "";
+            }
+
+            if (inspectionProjectFilter) {
+                inspectionProjectFilter.value = "";
+            }
+
+            if (inspectionMethodFilter) {
+                inspectionMethodFilter.value = "";
+            }
+
+            if (inspectionResultFilter) {
+                inspectionResultFilter.value = "";
+            }
+
+            renderInspections();
+
+        }
+    );
 
 }
 
@@ -1555,7 +1962,7 @@ if (inspectionForm) {
 
             const newInspection = {
 
-                id: Date.now(),
+                id: createId(),
 
                 projectId:
                     selectedProject.id,
@@ -1614,10 +2021,17 @@ if (inspectionForm) {
             );
 
 
+            syncWeldStatus(
+                newInspection.jointId
+            );
+
+
             saveAllData();
 
 
             renderInspections();
+
+            renderWelds();
 
             updateDashboard();
 
@@ -1625,17 +2039,7 @@ if (inspectionForm) {
             inspectionForm.reset();
 
 
-            if (inspectionJoint) {
-
-                inspectionJoint.innerHTML = `
-
-                    <option value="">
-                        Select Joint
-                    </option>
-
-                `;
-
-            }
+            loadInspectionJoints();
 
         }
     );
@@ -1673,6 +2077,23 @@ function editInspection(id) {
     }
 
 
+    const method =
+        normalizeOption(
+            newMethod,
+            INSPECTION_METHODS
+        );
+
+
+    if (!method) {
+
+        alert(
+            "Method must be one of VT, PT, MT or UT."
+        );
+
+        return;
+    }
+
+
     const newInspector =
         prompt(
             "Inspector:",
@@ -1681,6 +2102,16 @@ function editInspection(id) {
 
 
     if (newInspector === null) {
+        return;
+    }
+
+
+    if (!newInspector.trim()) {
+
+        alert(
+            "Inspector name is required."
+        );
+
         return;
     }
 
@@ -1709,6 +2140,23 @@ function editInspection(id) {
     }
 
 
+    const result =
+        normalizeOption(
+            newResult,
+            INSPECTION_RESULTS
+        );
+
+
+    if (!result) {
+
+        alert(
+            "Result must be Accepted, Rejected or Pending."
+        );
+
+        return;
+    }
+
+
     const newComments =
         prompt(
             "Comments:",
@@ -1721,8 +2169,7 @@ function editInspection(id) {
     }
 
 
-    inspection.method =
-        newMethod.trim();
+    inspection.method = method;
 
 
     inspection.inspector =
@@ -1733,18 +2180,22 @@ function editInspection(id) {
         newDate.trim();
 
 
-    inspection.result =
-        newResult.trim();
+    inspection.result = result;
 
 
     inspection.comments =
         newComments.trim();
 
 
+    syncWeldStatus(inspection.jointId);
+
+
     saveAllData();
 
 
     renderInspections();
+
+    renderWelds();
 
     updateDashboard();
 
@@ -1782,6 +2233,9 @@ function deleteInspection(id) {
     }
 
 
+    const jointId = inspection.jointId;
+
+
     inspections =
         inspections.filter(
             inspection =>
@@ -1789,10 +2243,15 @@ function deleteInspection(id) {
         );
 
 
+    syncWeldStatus(jointId);
+
+
     saveAllData();
 
 
     renderInspections();
+
+    renderWelds();
 
     updateDashboard();
 
@@ -1803,11 +2262,9 @@ function deleteInspection(id) {
 // INITIAL LOAD
 // =====================================================
 
-renderProjects();
+syncAllWeldStatuses();
 
-renderWelds();
-
-renderInspections();
+saveAllData();
 
 loadProjectOptions();
 
@@ -1815,6 +2272,12 @@ loadInspectionProjects();
 
 loadWeldProjectFilter();
 
-filterWelds();
+loadInspectionProjectFilter();
+
+renderProjects();
+
+renderWelds();
+
+renderInspections();
 
 updateDashboard();

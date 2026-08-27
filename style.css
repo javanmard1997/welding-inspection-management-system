@@ -926,3 +926,105 @@ a {
     }
 
 }
+
+/* =========================================================
+   BULK IMPORT
+========================================================= */
+
+.bulk-hint {
+    margin-top: 12px;
+
+    color: var(--text-soft);
+
+    font-size: 13px;
+}
+
+.link-button {
+    padding: 0;
+
+    border: none;
+
+    background: none;
+
+    color: var(--primary);
+
+    cursor: pointer;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+
+    text-decoration: underline;
+}
+
+.bulk-range {
+    margin-top: 16px;
+
+    padding: 14px 16px;
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    background: var(--surface-soft);
+}
+
+.bulk-range summary {
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.bulk-range .form-grid {
+    margin-top: 16px;
+}
+
+.bulk-preview {
+    margin-top: 20px;
+}
+
+.bulk-preview p {
+    margin-bottom: 12px;
+
+    color: var(--text-soft);
+
+    font-size: 13px;
+}
+
+.bulk-preview .action-buttons {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 16px;
+}
+
+.bulk-preview .action-buttons button:not(.primary-button) {
+    min-height: 43px;
+
+    padding: 0 20px;
+
+    border: 1px solid var(--border-dark);
+    border-radius: 8px;
+
+    background: var(--surface);
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.bulk-row-valid td:last-child {
+    color: var(--success);
+}
+
+.bulk-row-invalid td {
+    background: var(--danger-bg);
+}
+
+.bulk-row-invalid td:last-child {
+    color: var(--danger);
+}

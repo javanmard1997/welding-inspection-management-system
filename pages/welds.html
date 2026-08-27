@@ -136,6 +136,225 @@
         </section>
 
 
+        <section class="panel">
+
+            <div class="panel-header">
+                <h2>Bulk Import Weld Joints</h2>
+            </div>
+
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label for="bulkProject">Project</label>
+
+                    <select id="bulkProject">
+                        <option value="">Select Project</option>
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="bulkFile">Excel / CSV File</label>
+
+                    <input
+                        type="file"
+                        id="bulkFile"
+                        accept=".csv,.xlsx,.xls"
+                    >
+                </div>
+
+            </div>
+
+
+            <p class="bulk-hint">
+                Columns: Joint Number, Welder ID, WPS Number, Material, Thickness (mm).
+
+                <button
+                    type="button"
+                    id="downloadTemplate"
+                    class="link-button"
+                >
+                    Download template
+                </button>
+            </p>
+
+
+            <details class="bulk-range">
+
+                <summary>
+                    Generate a range instead of a file
+                </summary>
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="rangePrefix">Joint Prefix</label>
+
+                        <input
+                            type="text"
+                            id="rangePrefix"
+                            placeholder="Example: J-"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangeFrom">From</label>
+
+                        <input
+                            type="number"
+                            id="rangeFrom"
+                            min="0"
+                            step="1"
+                            placeholder="1"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangeTo">To</label>
+
+                        <input
+                            type="number"
+                            id="rangeTo"
+                            min="0"
+                            step="1"
+                            placeholder="100"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangePadding">Number Digits</label>
+
+                        <input
+                            type="number"
+                            id="rangePadding"
+                            min="1"
+                            max="10"
+                            step="1"
+                            placeholder="3"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangeWelder">Welder ID</label>
+
+                        <input
+                            type="text"
+                            id="rangeWelder"
+                            placeholder="Example: W-102"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangeWps">WPS Number</label>
+
+                        <input
+                            type="text"
+                            id="rangeWps"
+                            placeholder="Example: WPS-001"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangeMaterial">Material</label>
+
+                        <input
+                            type="text"
+                            id="rangeMaterial"
+                            placeholder="Example: ASTM A106"
+                        >
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="rangeThickness">Thickness (mm)</label>
+
+                        <input
+                            type="number"
+                            id="rangeThickness"
+                            min="0"
+                            step="0.1"
+                            placeholder="Example: 12"
+                        >
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="generateRange"
+                    class="primary-button"
+                >
+                    Preview Range
+                </button>
+
+            </details>
+
+
+            <div id="bulkPreviewArea" class="bulk-preview" hidden>
+
+                <p id="bulkSummary"></p>
+
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Row</th>
+                                <th>Joint No.</th>
+                                <th>Welder</th>
+                                <th>WPS</th>
+                                <th>Material</th>
+                                <th>Thickness</th>
+                                <th>Status</th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="bulkPreviewTable">
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div class="action-buttons">
+
+                    <button
+                        type="button"
+                        id="confirmBulkImport"
+                        class="primary-button"
+                    >
+                        Import Valid Rows
+                    </button>
+
+                    <button
+                        type="button"
+                        id="cancelBulkImport"
+                    >
+                        Cancel
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
         <section class="panel project-list">
 
             <div class="panel-header">
@@ -222,6 +441,8 @@
 
     </main>
 
+
+    <script src="../vendor/xlsx.full.min.js"></script>
 
     <script src="../script.js"></script>
 

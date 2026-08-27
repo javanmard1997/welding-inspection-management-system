@@ -896,16 +896,30 @@ const weldTable =
 const weldProject =
     document.getElementById("weldProject");
 
+const bulkProject =
+    document.getElementById("bulkProject");
+
 
 function loadProjectOptions() {
+
+    const options =
+        projects.map(project => ({
+            value: project.id,
+            label: project.name
+        }));
+
 
     fillSelectOptions(
         weldProject,
         "Select Project",
-        projects.map(project => ({
-            value: project.id,
-            label: project.name
-        }))
+        options
+    );
+
+
+    fillSelectOptions(
+        bulkProject,
+        "Select Project",
+        options
     );
 
 }
@@ -1309,6 +1323,862 @@ if (weldForm) {
 
 
             updateDashboard();
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// BULK IMPORT WELD JOINTS
+// =====================================================
+
+const bulkFile =
+    document.getElementById("bulkFile");
+
+const downloadTemplate =
+    document.getElementById("downloadTemplate");
+
+const bulkPreviewArea =
+    document.getElementById("bulkPreviewArea");
+
+const bulkPreviewTable =
+    document.getElementById("bulkPreviewTable");
+
+const bulkSummary =
+    document.getElementById("bulkSummary");
+
+const confirmBulkImport =
+    document.getElementById("confirmBulkImport");
+
+const cancelBulkImport =
+    document.getElementById("cancelBulkImport");
+
+const generateRange =
+    document.getElementById("generateRange");
+
+
+const BULK_COLUMNS = [
+    {
+        key: "jointNumber",
+        header: "Joint Number",
+        aliases: ["joint", "joint no", "joint no.", "joint number", "jointnumber"]
+    },
+    {
+        key: "welderId",
+        header: "Welder ID",
+        aliases: ["welder", "welder id", "welderid"]
+    },
+    {
+        key: "wpsNumber",
+        header: "WPS Number",
+        aliases: ["wps", "wps no", "wps number", "wpsnumber"]
+    },
+    {
+        key: "material",
+        header: "Material",
+        aliases: ["material"]
+    },
+    {
+        key: "thickness",
+        header: "Thickness (mm)",
+        aliases: ["thickness", "thickness mm", "thickness (mm)", "thicknessmm"]
+    }
+];
+
+
+let bulkRows = [];
+
+
+function normalizeHeader(value) {
+
+    return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ");
+}
+
+
+function parseCsv(text) {
+
+    const rows = [];
+
+    let row = [];
+
+    let field = "";
+
+    let quoted = false;
+
+
+    const pushField = () => {
+
+        row.push(field);
+
+        field = "";
+    };
+
+
+    const pushRow = () => {
+
+        pushField();
+
+        rows.push(row);
+
+        row = [];
+    };
+
+
+    for (let index = 0; index < text.length; index++) {
+
+        const char = text[index];
+
+
+        if (quoted) {
+
+            if (char === '"') {
+
+                if (text[index + 1] === '"') {
+
+                    field += '"';
+
+                    index++;
+
+                } else {
+
+                    quoted = false;
+
+                }
+
+            } else {
+
+                field += char;
+
+            }
+
+            continue;
+        }
+
+
+        if (char === '"') {
+
+            quoted = true;
+
+        } else if (char === ",") {
+
+            pushField();
+
+        } else if (char === "\n") {
+
+            pushRow();
+
+        } else if (char !== "\r") {
+
+            field += char;
+
+        }
+
+    }
+
+
+    if (field || row.length) {
+        pushRow();
+    }
+
+
+    return rows.filter(
+        row => row.some(cell => String(cell).trim())
+    );
+}
+
+
+function mapSheetRows(rows) {
+
+    if (!rows.length) {
+        return [];
+    }
+
+
+    const headers =
+        rows[0].map(normalizeHeader);
+
+
+    const columnIndexes = {};
+
+
+    BULK_COLUMNS.forEach(column => {
+
+        const accepted =
+            column.aliases.concat(
+                normalizeHeader(column.header)
+            );
+
+
+        columnIndexes[column.key] =
+            headers.findIndex(
+                header =>
+                    accepted.includes(header)
+            );
+
+    });
+
+
+    const missing =
+        BULK_COLUMNS.filter(
+            column => columnIndexes[column.key] === -1
+        );
+
+
+    if (missing.length) {
+
+        throw new Error(
+            "Missing columns: " +
+            missing
+                .map(column => column.header)
+                .join(", ")
+        );
+
+    }
+
+
+    return rows.slice(1).map((row, index) => {
+
+        const record = {
+            rowNumber: index + 2
+        };
+
+
+        BULK_COLUMNS.forEach(column => {
+
+            record[column.key] =
+                String(
+                    row[columnIndexes[column.key]] ?? ""
+                ).trim();
+
+        });
+
+
+        return record;
+    });
+}
+
+
+function validateBulkRows(rows, projectId) {
+
+    const existingJoints =
+        new Set(
+            welds
+                .filter(
+                    weld => weld.projectId == projectId
+                )
+                .map(
+                    weld =>
+                        weld.jointNumber.toLowerCase()
+                )
+        );
+
+
+    const seen = new Set();
+
+
+    return rows.map(row => {
+
+        const errors = [];
+
+
+        if (!row.jointNumber) {
+            errors.push("Joint Number is required");
+        }
+
+        if (!row.welderId) {
+            errors.push("Welder ID is required");
+        }
+
+        if (!row.wpsNumber) {
+            errors.push("WPS Number is required");
+        }
+
+        if (!row.material) {
+            errors.push("Material is required");
+        }
+
+
+        const thickness = Number(row.thickness);
+
+
+        if (
+            !row.thickness ||
+            Number.isNaN(thickness) ||
+            thickness <= 0
+        ) {
+            errors.push("Thickness must be a positive number");
+        }
+
+
+        const key = row.jointNumber.toLowerCase();
+
+
+        if (key && existingJoints.has(key)) {
+            errors.push("Joint already exists in this project");
+        }
+
+        if (key && seen.has(key)) {
+            errors.push("Duplicate joint in file");
+        }
+
+
+        seen.add(key);
+
+
+        return {
+            ...row,
+            errors: errors
+        };
+    });
+}
+
+
+function renderBulkPreview() {
+
+    if (!bulkPreviewArea || !bulkPreviewTable) {
+        return;
+    }
+
+
+    if (!bulkRows.length) {
+
+        bulkPreviewArea.hidden = true;
+
+        bulkPreviewTable.innerHTML = "";
+
+        return;
+    }
+
+
+    bulkPreviewArea.hidden = false;
+
+
+    bulkPreviewTable.innerHTML = "";
+
+
+    bulkRows.forEach(row => {
+
+        const tableRow =
+            document.createElement("tr");
+
+
+        tableRow.className =
+            row.errors.length
+            ?
+            "bulk-row-invalid"
+            :
+            "bulk-row-valid";
+
+
+        tableRow.innerHTML = `
+
+            <td>
+                ${escapeHtml(row.rowNumber)}
+            </td>
+
+            <td>
+                ${escapeHtml(row.jointNumber)}
+            </td>
+
+            <td>
+                ${escapeHtml(row.welderId)}
+            </td>
+
+            <td>
+                ${escapeHtml(row.wpsNumber)}
+            </td>
+
+            <td>
+                ${escapeHtml(row.material)}
+            </td>
+
+            <td>
+                ${escapeHtml(row.thickness)}
+            </td>
+
+            <td>
+                ${
+                    row.errors.length
+                    ?
+                    escapeHtml(row.errors.join("; "))
+                    :
+                    "Ready"
+                }
+            </td>
+
+        `;
+
+
+        bulkPreviewTable.appendChild(tableRow);
+
+    });
+
+
+    const validCount =
+        bulkRows.filter(
+            row => !row.errors.length
+        ).length;
+
+
+    if (bulkSummary) {
+
+        bulkSummary.textContent =
+            `${validCount} of ${bulkRows.length} rows ready to import`;
+
+    }
+
+
+    if (confirmBulkImport) {
+
+        confirmBulkImport.disabled =
+            validCount === 0;
+
+    }
+
+}
+
+
+function resetBulkImport() {
+
+    bulkRows = [];
+
+
+    if (bulkFile) {
+        bulkFile.value = "";
+    }
+
+
+    renderBulkPreview();
+
+}
+
+
+function loadBulkRows(rows) {
+
+    const projectId =
+        bulkProject
+        ?
+        bulkProject.value
+        :
+        "";
+
+
+    bulkRows =
+        validateBulkRows(rows, projectId);
+
+
+    renderBulkPreview();
+
+}
+
+
+function readBulkFile(file) {
+
+    const reader = new FileReader();
+
+
+    const isCsv =
+        /\.csv$/i.test(file.name);
+
+
+    reader.onload = function () {
+
+        try {
+
+            let sheetRows;
+
+
+            if (isCsv) {
+
+                sheetRows =
+                    parseCsv(String(reader.result));
+
+            } else if (typeof XLSX === "undefined") {
+
+                alert(
+                    "Excel support is unavailable. Please use a CSV file."
+                );
+
+                return;
+
+            } else {
+
+                const workbook =
+                    XLSX.read(
+                        reader.result,
+                        { type: "array" }
+                    );
+
+
+                const sheet =
+                    workbook.Sheets[
+                        workbook.SheetNames[0]
+                    ];
+
+
+                sheetRows =
+                    XLSX.utils.sheet_to_json(
+                        sheet,
+                        {
+                            header: 1,
+                            blankrows: false,
+                            defval: ""
+                        }
+                    );
+
+            }
+
+
+            loadBulkRows(
+                mapSheetRows(sheetRows)
+            );
+
+        } catch (error) {
+
+            alert(
+                "Could not read the file: " +
+                error.message
+            );
+
+        }
+
+    };
+
+
+    if (isCsv) {
+
+        reader.readAsText(file);
+
+    } else {
+
+        reader.readAsArrayBuffer(file);
+
+    }
+
+}
+
+
+if (bulkFile) {
+
+    bulkFile.addEventListener(
+        "change",
+        function () {
+
+            if (!bulkProject || !bulkProject.value) {
+
+                alert(
+                    "Please select a project before importing."
+                );
+
+                bulkFile.value = "";
+
+                return;
+            }
+
+
+            const file = bulkFile.files[0];
+
+
+            if (file) {
+                readBulkFile(file);
+            }
+
+        }
+    );
+
+}
+
+
+if (bulkProject) {
+
+    bulkProject.addEventListener(
+        "change",
+        function () {
+
+            if (bulkRows.length) {
+                loadBulkRows(bulkRows);
+            }
+
+        }
+    );
+
+}
+
+
+if (generateRange) {
+
+    generateRange.addEventListener(
+        "click",
+        function () {
+
+            if (!bulkProject || !bulkProject.value) {
+
+                alert(
+                    "Please select a project before importing."
+                );
+
+                return;
+            }
+
+
+            const prefix =
+                document
+                .getElementById("rangePrefix")
+                .value
+                .trim();
+
+
+            const from =
+                Number(
+                    document
+                    .getElementById("rangeFrom")
+                    .value
+                );
+
+
+            const to =
+                Number(
+                    document
+                    .getElementById("rangeTo")
+                    .value
+                );
+
+
+            const padding =
+                Number(
+                    document
+                    .getElementById("rangePadding")
+                    .value
+                ) || 1;
+
+
+            const welderId =
+                document
+                .getElementById("rangeWelder")
+                .value
+                .trim();
+
+
+            const wpsNumber =
+                document
+                .getElementById("rangeWps")
+                .value
+                .trim();
+
+
+            const material =
+                document
+                .getElementById("rangeMaterial")
+                .value
+                .trim();
+
+
+            const thickness =
+                document
+                .getElementById("rangeThickness")
+                .value
+                .trim();
+
+
+            if (
+                !Number.isInteger(from) ||
+                !Number.isInteger(to) ||
+                to < from
+            ) {
+
+                alert(
+                    "Please enter a valid joint number range."
+                );
+
+                return;
+            }
+
+
+            if (to - from + 1 > 1000) {
+
+                alert(
+                    "Please generate at most 1000 joints at a time."
+                );
+
+                return;
+            }
+
+
+            const rows = [];
+
+
+            for (let number = from; number <= to; number++) {
+
+                rows.push({
+
+                    rowNumber: rows.length + 1,
+
+                    jointNumber:
+                        prefix +
+                        String(number)
+                            .padStart(padding, "0"),
+
+                    welderId: welderId,
+
+                    wpsNumber: wpsNumber,
+
+                    material: material,
+
+                    thickness: thickness
+
+                });
+
+            }
+
+
+            loadBulkRows(rows);
+
+        }
+    );
+
+}
+
+
+if (confirmBulkImport) {
+
+    confirmBulkImport.addEventListener(
+        "click",
+        function () {
+
+            const selectedProject =
+                projects.find(
+                    project =>
+                        project.id ==
+                        (bulkProject ? bulkProject.value : "")
+                );
+
+
+            if (!selectedProject) {
+
+                alert(
+                    "Please select a project before importing."
+                );
+
+                return;
+            }
+
+
+            const validRows =
+                bulkRows.filter(
+                    row => !row.errors.length
+                );
+
+
+            if (!validRows.length) {
+
+                alert(
+                    "There are no valid rows to import."
+                );
+
+                return;
+            }
+
+
+            validRows.forEach(row => {
+
+                welds.push({
+
+                    id: createId(),
+
+                    projectId: selectedProject.id,
+
+                    projectName: selectedProject.name,
+
+                    jointNumber: row.jointNumber,
+
+                    welderId: row.welderId,
+
+                    wpsNumber: row.wpsNumber,
+
+                    material: row.material,
+
+                    thickness: row.thickness,
+
+                    status: "Pending"
+
+                });
+
+            });
+
+
+            saveAllData();
+
+
+            resetBulkImport();
+
+
+            renderWelds();
+
+            updateDashboard();
+
+
+            alert(
+                `Imported ${validRows.length} weld joints.`
+            );
+
+        }
+    );
+
+}
+
+
+if (cancelBulkImport) {
+
+    cancelBulkImport.addEventListener(
+        "click",
+        resetBulkImport
+    );
+
+}
+
+
+if (downloadTemplate) {
+
+    downloadTemplate.addEventListener(
+        "click",
+        function () {
+
+            const csv =
+                BULK_COLUMNS
+                    .map(column => column.header)
+                    .join(",") +
+                "\n" +
+                "J-001,W-102,WPS-001,ASTM A106,12\n";
+
+
+            const blob =
+                new Blob(
+                    [csv],
+                    { type: "text/csv;charset=utf-8;" }
+                );
+
+
+            const link =
+                document.createElement("a");
+
+
+            link.href =
+                URL.createObjectURL(blob);
+
+            link.download =
+                "weld-joints-template.csv";
+
+
+            link.click();
+
+
+            URL.revokeObjectURL(link.href);
 
         }
     );
